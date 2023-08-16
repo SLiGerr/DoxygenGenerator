@@ -11,50 +11,13 @@ namespace DoxygenGenerator
         private Thread doxygenThread;
         private string generateButtonName = "Generate";
 
-        private bool canGenerate => File.Exists(doxygenPath)
-            && Directory.Exists(inputDirectory)
-            && Directory.Exists(outputDirectory)
+        private bool CanGenerate(int index) => File.Exists(ParamGenerator.DoxygenPath)
+            && Directory.Exists(ParamGenerator.InputDirectory.Get(index))
+            && Directory.Exists(ParamGenerator.OutputDirectory.Get(index))
             && doxygenThread == null;
 
-        #region Settings
-        private string doxygenPath
-        {
-            get => GeneratorSettings.doxygenPath;
-            set => GeneratorSettings.doxygenPath = value;
-        }
 
-        private string inputDirectory
-        {
-            get => GeneratorSettings.inputDirectory;
-            set => GeneratorSettings.inputDirectory = value;
-        }
-
-        private string outputDirectory
-        {
-            get => GeneratorSettings.outputDirectory;
-            set => GeneratorSettings.outputDirectory = value;
-        }
-
-        private string project
-        {
-            get => GeneratorSettings.project;
-            set => GeneratorSettings.project = value;
-        }
-
-        private string synopsis
-        {
-            get => GeneratorSettings.synopsis;
-            set => GeneratorSettings.synopsis = value;
-        }
-
-        private string version
-        {
-            get => GeneratorSettings.version;
-            set => GeneratorSettings.version = value;
-        }
-        #endregion
-
-        [MenuItem("Window/Doxygen Generator")]
+        [MenuItem("Tools/Doxygen Generator")]
         public static void Initialize()
         {
             var window = GetWindow<GeneratorWindow>("Doxygen Generator");
@@ -69,14 +32,22 @@ namespace DoxygenGenerator
             // Select your doxygen install location
             DoxygenInstallPathGUI();
 
-            // Setup the directories
-            SetupTheDirectoriesGUI();
+            EditorGUILayout.BeginHorizontal();
+            for (int i = 0; i < 2; i++)
+            {
+                EditorGUILayout.BeginVertical();
+                // Setup the directories
+                SetupTheDirectoriesGUI(i);
 
-            // Set your project settings
-            ProjectSettingsGUI();
+                // Set your project settings
+                ProjectSettingsGUI(i);
 
-            // Generate the API
-            DocumentationGUI();
+                // Generate the API
+                DocumentationGUI(i);
+                EditorGUILayout.EndVertical();
+            }
+            EditorGUILayout.EndHorizontal();
+
 
             EditorGUILayout.EndScrollView();
         }
@@ -88,9 +59,9 @@ namespace DoxygenGenerator
             GUILayout.Label("Doxygen Install Path", EditorStyles.boldLabel);
 
             // Doxygen not selected error
-            if (!File.Exists(doxygenPath))
+            if (!File.Exists(ParamGenerator.DoxygenPath))
             {
-                doxygenPath = default;
+                ParamGenerator.DoxygenPath = default;
                 EditorGUILayout.HelpBox("No doxygen install path is selected. Please install Doxygen and select it below.", MessageType.Error, true);
                 if (GUILayout.Button("Download Doxygen", GUILayout.MaxWidth(150)))
                 {
@@ -100,64 +71,69 @@ namespace DoxygenGenerator
 
             // Doxygen Path
             EditorGUILayout.BeginHorizontal();
-            doxygenPath = EditorGUILayout.DelayedTextField("doxygen.exe", doxygenPath);
+            ParamGenerator.DoxygenPath = EditorGUILayout.DelayedTextField("doxygen.exe", ParamGenerator.DoxygenPath);
             if (GUILayout.Button("...", EditorStyles.miniButtonRight, GUILayout.Width(22)))
             {
-                doxygenPath = EditorUtility.OpenFilePanel("Select your doxygen.exe", string.Empty, string.Empty);
+                ParamGenerator.DoxygenPath = EditorUtility.OpenFilePanel("Select your doxygen.exe", string.Empty, string.Empty);
             }
             EditorGUILayout.EndHorizontal();
         }
 
-        private void SetupTheDirectoriesGUI()
+        private void SetupTheDirectoriesGUI(int index)
         {
             EditorGUILayout.Space(EditorGUIUtility.singleLineHeight);
 
             GUILayout.Label("Setup the Directories", EditorStyles.boldLabel);
-
             // Input not selected error
-            if (!Directory.Exists(inputDirectory))
+            if (!Directory.Exists(GetInputPath()))
             {
-                inputDirectory = default;
+                SetInputPath(default);
                 EditorGUILayout.HelpBox("No input directory selected. Please select a directory you would like your API to be generated from.", MessageType.Error, true);
             }
 
             // Input Directory
             EditorGUILayout.BeginHorizontal();
-            inputDirectory = EditorGUILayout.DelayedTextField("Input Directory", inputDirectory);
+            SetInputPath(EditorGUILayout.DelayedTextField("Input Directory", GetInputPath()));
             if (GUILayout.Button("...", EditorStyles.miniButtonRight, GUILayout.Width(22)))
             {
-                inputDirectory = EditorUtility.OpenFolderPanel("Select your Input Directory", string.Empty, string.Empty);
+                SetInputPath(EditorUtility.OpenFolderPanel("Select your Input Directory", string.Empty, string.Empty));
             }
             EditorGUILayout.EndHorizontal();
 
             // Output not selected error
-            if (!Directory.Exists(outputDirectory))
+            if (!Directory.Exists(GetOutputPath()))
             {
-                outputDirectory = default;
+                SetOutputPath(default);
                 EditorGUILayout.HelpBox("No output directory selected. Please select a directory you would like your API to be generated to.", MessageType.Error, true);
             }
 
             // Output Directory
             EditorGUILayout.BeginHorizontal();
-            outputDirectory = EditorGUILayout.DelayedTextField("Output Directory", outputDirectory);
+            SetOutputPath(EditorGUILayout.DelayedTextField("Output Directory", GetOutputPath()));
             if (GUILayout.Button("...", EditorStyles.miniButtonRight, GUILayout.Width(22)))
             {
-                outputDirectory = EditorUtility.OpenFolderPanel("Select your Output Directory", string.Empty, string.Empty);
+                SetOutputPath(EditorUtility.OpenFolderPanel("Select your Output Directory", string.Empty, string.Empty));
             }
             EditorGUILayout.EndHorizontal();
+            
+            string GetInputPath()            => ParamGenerator.InputDirectory.Get(index);
+            void   SetInputPath(string path) => ParamGenerator.InputDirectory.Set(index, path);
+
+            string GetOutputPath()            => ParamGenerator.OutputDirectory.Get(index);
+            void   SetOutputPath(string path) => ParamGenerator.OutputDirectory.Set(index, path);
         }
 
-        private void ProjectSettingsGUI()
+        private void ProjectSettingsGUI(int index)
         {
             EditorGUILayout.Space(EditorGUIUtility.singleLineHeight);
 
             GUILayout.Label("Project Settings", EditorStyles.boldLabel);
-            project = EditorGUILayout.TextField("Name", project);
-            synopsis = EditorGUILayout.TextField("Synopsis", synopsis);
-            version = EditorGUILayout.TextField("Version", version);
+            ParamGenerator.Project.Set(index, EditorGUILayout.TextField("Name", ParamGenerator.Project.Get(index)));
+            ParamGenerator.Synopsis.Set(index, EditorGUILayout.TextField("Synopsis", ParamGenerator.Synopsis.Get(index)));
+            ParamGenerator.Version.Set(index, EditorGUILayout.TextField("Version", ParamGenerator.Version.Get(index)));
         }
 
-        private void DocumentationGUI()
+        private void DocumentationGUI(int index)
         {
             EditorGUILayout.Space(EditorGUIUtility.singleLineHeight);
 
@@ -177,24 +153,24 @@ namespace DoxygenGenerator
             }
 
             // Generate Button
-            EditorGUI.BeginDisabledGroup(!canGenerate);
+            EditorGUI.BeginDisabledGroup(!CanGenerate(index));
             if (GUILayout.Button(generateButtonName, GUILayout.Height(EditorGUIUtility.singleLineHeight * 2)))
             {
-                doxygenThread = Generator.GenerateAsync();
+                doxygenThread = Generator.GenerateAsync(index);
                 generateButtonName = "Generating...";
             }
             EditorGUI.EndDisabledGroup();
 
             // Open Button
-            EditorGUI.BeginDisabledGroup(!Directory.Exists(outputDirectory) || doxygenThread != null);
+            EditorGUI.BeginDisabledGroup(!Directory.Exists(GetOutputPath()) || doxygenThread != null);
             if (GUILayout.Button("Open", GUILayout.Height(EditorGUIUtility.singleLineHeight * 2)))
             {
-                System.Diagnostics.Process.Start(outputDirectory);
+                System.Diagnostics.Process.Start(GetOutputPath());
             }
             EditorGUI.EndDisabledGroup();
 
             // View Log Button
-            var logPath = $"{outputDirectory}/Log.txt";
+            var logPath = $"{GetOutputPath()}/Log.txt";
             EditorGUI.BeginDisabledGroup(!File.Exists(logPath) || doxygenThread != null);
             if (GUILayout.Button("View Log", GUILayout.Height(EditorGUIUtility.singleLineHeight * 2)))
             {
@@ -203,13 +179,15 @@ namespace DoxygenGenerator
             EditorGUI.EndDisabledGroup();
 
             // Browse Button
-            var browsePath = $"{outputDirectory}/html/annotated.html";
+            var browsePath = $"{GetOutputPath()}/html/annotated.html";
             EditorGUI.BeginDisabledGroup(!File.Exists(browsePath) || doxygenThread != null);
             if (GUILayout.Button("Browse", GUILayout.Height(EditorGUIUtility.singleLineHeight * 2)))
             {
                 Application.OpenURL($"File://{browsePath}");
             }
             EditorGUI.EndDisabledGroup();
+            
+            string GetOutputPath()            => ParamGenerator.OutputDirectory.Get(index);
         }
     }
 }

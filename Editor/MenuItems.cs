@@ -21,7 +21,7 @@ namespace DoxygenGenerator
             if (Directory.Exists(assetPath))
             {
                 var directoryPath = new DirectoryInfo(assetPath).FullName;
-                GeneratorSettings.inputDirectory = directoryPath;
+                ParamGenerator.InputDirectory.Set(0, directoryPath);;
 
                 var packageFiles = Directory.GetFiles(directoryPath, "package.json");
                 if(packageFiles.Length > 0)
@@ -30,8 +30,8 @@ namespace DoxygenGenerator
                     var packageJson = File.ReadAllText(packageFilePath);
 
                     var packageData = JsonUtility.FromJson<PackageData>(packageJson);
-                    GeneratorSettings.project = packageData.displayName;
-                    GeneratorSettings.version = packageData.version;
+                    ParamGenerator.Project.Set(0, packageData.displayName);
+                    ParamGenerator.Version.Set(0, packageData.version);
                 }
             }
 

@@ -8,17 +8,17 @@ namespace DoxygenGenerator
 {
     public static class Generator
     {
-        private const string filesPath = "Packages/com.CaseyDeCoder.doxygengenerator/Editor/Files~";
+        private const string filesPath = "Assets/DoxygenGenerator/Editor/Files~";
 
-        public static Thread GenerateAsync()
+        public static Thread GenerateAsync(int index)
         {
             // Get settings (I find it easier to read this way)
-            var doxygenPath = GeneratorSettings.doxygenPath;
-            var inputDirectory = GeneratorSettings.inputDirectory;
-            var outputDirectory = GeneratorSettings.outputDirectory;
-            var project = GeneratorSettings.project;
-            var synopsis = GeneratorSettings.synopsis;
-            var version = GeneratorSettings.version;
+            var doxygenPath     = ParamGenerator.DoxygenPath;
+            var inputDirectory  = ParamGenerator.InputDirectory.Get(index);
+            var outputDirectory = ParamGenerator.OutputDirectory.Get(index);
+            var project         = ParamGenerator.Project.Get(index);
+            var synopsis        = ParamGenerator.Synopsis.Get(index);
+            var version         = ParamGenerator.Version.Get(index);
 
             // Add the Doxyfile
             var doxyFileSource = $"{filesPath}/Doxyfile";
