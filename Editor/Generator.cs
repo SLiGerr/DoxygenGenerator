@@ -8,7 +8,7 @@ namespace DoxygenGenerator
 {
     public static class Generator
     {
-        private const string filesPath = "Assets/DoxygenGenerator/Editor/Files~";
+        private const string filesPath = "Packages/com.CaseyDeCoder.doxygengenerator/Editor/Files~";
 
         public static Thread GenerateAsync(int index)
         {
